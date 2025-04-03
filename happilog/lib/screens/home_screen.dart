@@ -134,6 +134,48 @@ class HomeScreen extends ConsumerWidget {
             ),
             
             const SizedBox(height: 24),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavigationButton(
+                  context,
+                  Icons.home,
+                  '홈',
+                  '/',
+                ),
+                _buildNavigationButton(
+                  context,
+                  Icons.calendar_today,
+                  '캘린더',
+                  '/calendar',
+                ),
+                _buildNavigationButton(
+                  context,
+                  Icons.add_circle,
+                  '기록',
+                  '/record',
+                ),
+                _buildNavigationButton(
+                  context,
+                  Icons.emoji_events,
+                  '챌린지',
+                  '/challenge',
+                ),
+                _buildNavigationButton(
+                  context,
+                  Icons.person,
+                  '아바타',
+                  '/avatar',
+                ),
+                _buildNavigationButton(
+                  context,
+                  Icons.leaderboard,
+                  '랭킹',
+                  '/ranking',
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -240,5 +282,32 @@ class HomeScreen extends ConsumerWidget {
       case Emotion.neutral:
         return const Icon(Icons.sentiment_neutral, size: 16, color: Colors.white);
     }
+  }
+  
+  Widget _buildNavigationButton(BuildContext context, IconData icon, String label, String route) {
+    return TextButton(
+      onPressed: () {
+        context.go(route);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'NanumGothicCoding',
+              fontSize: 12,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 } 

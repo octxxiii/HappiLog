@@ -7,6 +7,8 @@ import 'package:happilog/screens/entry_detail_screen.dart';
 import 'package:happilog/screens/home_screen.dart';
 import 'package:happilog/screens/rank_screen.dart';
 import 'package:happilog/screens/record_screen.dart';
+import 'package:happilog/screens/challenge_screen.dart';
+import 'package:happilog/screens/challenge_detail_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -87,6 +89,10 @@ final router = GoRouter(
           path: '/rank',
           builder: (context, state) => const RankScreen(),
         ),
+        GoRoute(
+          path: '/challenge',
+          builder: (context, state) => const ChallengeScreen(),
+        ),
       ],
     ),
     GoRoute(
@@ -95,6 +101,12 @@ final router = GoRouter(
         final id = state.pathParameters['id']!;
         return EntryDetailScreen(recordId: id);
       },
+    ),
+    GoRoute(
+      path: '/challenge/:id',
+      builder: (context, state) => ChallengeDetailScreen(
+        challengeId: state.pathParameters['id']!,
+      ),
     ),
   ],
 );

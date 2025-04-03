@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:happilog/models/daily_record.dart';
+import 'package:happilog/models/challenge.dart';
 import 'package:uuid/uuid.dart';
 
 class FirebaseService {
@@ -27,15 +28,9 @@ class FirebaseService {
     try {
       // 이미 로그인되어 있는 경우
       if (_auth.currentUser != null) {
-        return UserCredential(
-          user: _auth.currentUser,
-          additionalUserInfo: AdditionalUserInfo(
-            isNewUser: false, 
-            providerId: 'anonymous',
-            username: null,
-            profile: {},
-          ),
-        );
+        // 이미 로그인한 경우에는 새로 로그인하지 않고 현재 로그인된 사용자 정보를 반환
+        // UserCredential을 직접 생성할 수 없으므로, 대신 다시 익명 로그인을 수행
+        return await _auth.signInAnonymously();
       }
       
       // 익명 로그인
@@ -196,5 +191,102 @@ class FirebaseService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // 챌린지 관련 메서드
+  static Future<String> createChallenge({
+    required String title,
+    required String description,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (currentUserId == null) {
+      throw Exception('사용자가 로그인되어 있지 않습니다.');
+    }
+
+    final challenge = Challenge(
+      id: '',
+      title: title,
+      description: description,
+      creatorId: currentUserId!,
+      participants: [currentUserId!],
+      startDate: startDate,
+      endDate: endDate,
+      participantScores: {currentUserId!: 0},
+      isActive: true,
+    );
+
+    final docRef = await _firestore.collection('challenges').add(challenge.toMap());
+    return docRef.id;
+  }
+
+  static Future<void> joinChallenge(String challengeId) async {
+    if (currentUserId == null) {
+      throw Exception('사용자가 로그인되어 있지 않습니다.');
+    }
+
+    await _firestore.collection('challenges').doc(challengeId).update({
+      'participants': FieldValue.arrayUnion([currentUserId]),
+      'participantScores.$currentUserId': 0,
+    });
+  }
+
+  static Future<void> updateScore(String challengeId, int score) async {
+    if (currentUserId == null) {
+      throw Exception('사용자가 로그인되어 있지 않습니다.');
+    }
+
+    await _firestore.collection('challenges').doc(challengeId).update({
+      'participantScores.$currentUserId': FieldValue.increment(score),
+    });
+  }
+
+  static Stream<List<Challenge>> getUserChallenges() {
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection('challenges')
+        .where('participants', arrayContains: currentUserId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Challenge.fromMap(doc.data()!, doc.id))
+            .toList());
+  }
+
+  static Stream<List<Challenge>> getActiveChallenges() {
+    return _firestore
+        .collection('challenges')
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Challenge.fromMap(doc.data()!, doc.id))
+            .toList());
+  }
+
+  static Future<Challenge?> getChallenge(String challengeId) async {
+    final doc = await _firestore.collection('challenges').doc(challengeId).get();
+    if (!doc.exists) return null;
+    return Challenge.fromMap(doc.data()!, doc.id);
+  }
+
+  static Future<void> endChallenge(String challengeId) async {
+    if (currentUserId == null) {
+      throw Exception('사용자가 로그인되어 있지 않습니다.');
+    }
+
+    final challenge = await getChallenge(challengeId);
+    if (challenge == null) {
+      throw Exception('챌린지를 찾을 수 없습니다.');
+    }
+
+    if (challenge.creatorId != currentUserId) {
+      throw Exception('챌린지 생성자만 종료할 수 있습니다.');
+    }
+
+    await _firestore.collection('challenges').doc(challengeId).update({
+      'isActive': false,
+    });
   }
 } 

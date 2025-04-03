@@ -37,7 +37,7 @@ class PixelAvatar extends ConsumerWidget {
         children: [
           // 기본 아바타 모양
           Positioned.fill(
-            child: _buildAvatarForStatus(avatarStatus),
+            child: _buildAvatarForStatus(avatarStatus ?? 'neutral'),
           ),
           
           // 글로우 효과 (glow 상태에만 표시)
